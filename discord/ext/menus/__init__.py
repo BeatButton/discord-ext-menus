@@ -690,9 +690,10 @@ class Menu(metaclass=_MenuMeta):
 
         if self.should_add_reactions():
             # Start the task first so we can listen to reactions before doing anything
-            for task in self.__tasks:
-                task.cancel()
-            self.__tasks.clear()
+            if self.__tasks:
+                for task in self.__tasks:
+                    task.cancel()
+                self.__tasks.clear()
 
             self._running = True
             self.__tasks.append(bot.loop.create_task(self._internal_loop()))
@@ -747,9 +748,10 @@ class Menu(metaclass=_MenuMeta):
     def stop(self):
         """Stops the internal loop."""
         self._running = False
-        for task in self.__tasks:
-            task.cancel()
-        self.__tasks.clear()
+        if self.__tasks:
+            for task in self.__tasks:
+                task.cancel()
+            self.__tasks.clear()
 
 class PageSource:
     """An interface representing a menu page's data source for the actual menu page.
@@ -893,7 +895,14 @@ class PageSpecifier:
         self.reference = reference
 
     def __repr__(self):
-        return 'PageSpecifier({0.direction!r}, {0.reference!r})'.format(self)
+        return '{0.__class__.__qualname__}({0.direction!r}, {0.reference!r})'.format(self)
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, type(self))
+            and self.direction is other.direction
+            and self.reference == other.reference
+        )
 
     @classmethod
     def first(cls):
